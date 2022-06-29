@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer';
+import 'dart:ffi';
 import 'dart:io';
 import 'dart:ui';
 
@@ -8,16 +9,20 @@ import 'package:camera/camera.dart';
 import 'package:external_path/external_path.dart';
 import 'package:ffmpeg_kit_flutter_min_gpl/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_min_gpl/ffmpeg_kit_config.dart';
+import 'package:ffmpeg_kit_flutter_min_gpl/ffmpeg_session.dart';
 import 'package:ffmpeg_kit_flutter_min_gpl/log.dart';
 import 'package:ffmpeg_kit_flutter_min_gpl/session.dart';
 import 'package:ffmpeg_kit_flutter_min_gpl/statistics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:horizontal_picker/horizontal_picker.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:video_app/camera_screen/preview_screen.dart';
+import 'package:video_app/camera_screen/process_video.dart';
+import 'package:video_app/home/home_screen.dart';
 import 'package:video_app/video_editor/video_editor.dart';
 import 'package:video_player/video_player.dart';
 
@@ -313,15 +318,8 @@ class _CameraScreenState extends State<CameraScreen>
                 .copy(
               '$directory/hello.$fileFormat',
             )
-                .then((value) {
-              FFmpegKitConfig.selectDocumentForWrite('.mp4', '*/*').then((uri) {
-                FFmpegKitConfig.getSafParameterForWrite(uri!).then((safUrl) {
-                  //
-                  FFmpegKit.execute(
-                          '-i $directory/hello.mp4 -i $directory/filter.png -vn -ss 0 -t 15 -i $directory/sample.mp3  -filter_complex "[0:v][1:v]overlay=5:5,drawtext=text="Summer Video":enable="between(t,0,15)"" -vcodec libx265 -crf 28 $safUrl.mp4')
-                      .then((value) => Get.snackbar('output', ''));
-                });
-              });
+                .then((value) async {
+              Get.off(const ProcessVideo());
             });
 
             //   _startVideoPlayer();
