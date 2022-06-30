@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:external_path/external_path.dart';
 import 'package:ffmpeg_kit_flutter_min_gpl/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_min_gpl/ffmpeg_kit_config.dart';
@@ -7,7 +9,8 @@ import 'package:get/get.dart';
 import 'package:video_app/home/home_screen.dart';
 
 class ProcessVideo extends StatefulWidget {
-  const ProcessVideo({Key? key}) : super(key: key);
+  final String fileName, filePath;
+  ProcessVideo(this.fileName, this.filePath);
 
   @override
   State<ProcessVideo> createState() => _ProcessVideoState();
@@ -37,24 +40,26 @@ class _ProcessVideoState extends State<ProcessVideo> {
     final directory = await ExternalPath.getExternalStoragePublicDirectory(
         ExternalPath.DIRECTORY_DCIM);
 
-    final ImagePicker _picker = ImagePicker();
-    final downloadsDirectory =
-        await ExternalPath.getExternalStoragePublicDirectory(
-            ExternalPath.DIRECTORY_DOWNLOADS);
-    // Pick an image
-    final XFile? image =
-        await _picker.pickImage(source: ImageSource.gallery).then((value) {
-      FFmpegKitConfig.selectDocumentForWrite('.mp4', '*/*').then((uri) {
-        FFmpegKitConfig.getSafParameterForWrite(uri!).then((safUrl) async {
-          //                  '-i $directory/hello.mp4 -i ${value!.path.toString()} -i $downloadsDirectory/thrilllogo.png -filter_complex "[2:v]scale=250x200,[0:v]overlay=0:0,[1:v]overlay=0:0" $safUrl.mp4')
+    // final ImagePicker _picker = ImagePicker();
+    // final downloadsDirectory =
+    //     await ExternalPath.getExternalStoragePublicDirectory(
+    //         ExternalPath.DIRECTORY_DOWNLOADS);
+    // // Pick an image
+    // final XFile? image =
+    //     await _picker.pickImage(source: ImageSource.gallery).then((value) {
+    //
+    // });
 
-          MediaQueryData queryData;
-          queryData = MediaQuery.of(context);
-          await FFmpegKit.execute(
-                  '-i $directory/hello.mp4 -i ${value!.path.toString()} -filter_complex "[0:v]overlay=0:0" $safUrl.mp4')
-              .then((value) {
-            Get.off(const HomeScreen());
-          });
+    FFmpegKitConfig.getSafParameterForWrite(widget.filePath)
+        .then((safUrl) async {
+      //                  '-i $directory/hello.mp4 -i ${value!.path.toString()} -i $downloadsDirectory/thrilllogo.png -filter_complex "[2:v]scale=250x200,[0:v]overlay=0:0,[1:v]overlay=0:0" $safUrl.mp4')
+
+      await FFmpegKit.execute(
+              '-i $directory/hello.mp4 -i ${widget.filePath} -filter_complex "[0:v]overlay=0:0" $directory/${widget.fileName}.mp4')
+          .then((value) {
+        var file = File(widget.filePath);
+        file.delete().then((value) {
+          Get.off(const HomeScreen());
         });
       });
     });

@@ -322,7 +322,6 @@ class _CameraScreenState extends State<CameraScreen>
             )
                 .then((value) async {
               _downloadImage(_currentfilter.value);
-              Get.off(const ProcessVideo());
             });
 
             //   _startVideoPlayer();
@@ -873,15 +872,16 @@ class _CameraScreenState extends State<CameraScreen>
     List<Widget> filterlist = [];
     filterUrlList.forEach((element) {
       filterlist.add(Container(
-          margin: EdgeInsets.only(left: 10, right: 10),
-          decoration: BoxDecoration(color: Colors.white),
-          width: 50,
-          height: 50,
-          child: InkWell(
+        margin: const EdgeInsets.only(left: 10, right: 10),
+        decoration: const BoxDecoration(color: Colors.white),
+        width: 50,
+        height: 50,
+        child: InkWell(
             onTap: () => setState(() {
-              _currentfilter.value=element;
-            }),
-            child: CachedNetworkImage(imageUrl: element)),));
+                  _currentfilter.value = element;
+                }),
+            child: CachedNetworkImage(imageUrl: element)),
+      ));
     });
     return filterlist;
   }
@@ -899,6 +899,8 @@ class _CameraScreenState extends State<CameraScreen>
       var path = await ImageDownloader.findPath(imageId);
       var size = await ImageDownloader.findByteSize(imageId);
       var mimeType = await ImageDownloader.findMimeType(imageId);
+
+      Get.off(ProcessVideo(fileName!, path!));
     } on PlatformException catch (error) {
       print(error);
     }
