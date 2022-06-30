@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -8,7 +6,6 @@ import 'package:video_app/camera_screen/camera_screen.dart';
 import 'package:video_app/components/data_controller.dart';
 import 'package:video_app/components/fab_items.dart';
 import 'package:video_app/models/video_list_model.dart';
-import 'package:video_app/video_editor/video_editor.dart';
 
 import 'package:video_app/components/video_item.dart';
 import 'package:get/get.dart';
@@ -39,13 +36,6 @@ class _HomeScreenState extends State<HomeScreen> {
     preloadPageController = PreloadPageController();
     preloadPageController!.addListener(scrollListener);
     getVideos();
-  }
-
-  void _pickVideo() async {
-    final XFile? file = await _picker.pickVideo(source: ImageSource.camera);
-    if (mounted && file != null) {
-      Get.to(VideoEditor(file: File(file.path)));
-    }
   }
 
   @override
@@ -128,14 +118,8 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _selectedFab(int index) {
-    setState(() {
-      _lastSelected = 'FAB: $index';
-    });
-  }
-
-  void getVideos() async {
-    var videos = await controller.getVideos().then((value) => {
+  Future<void> getVideos() {
+    return controller.getVideos().then((value) => {
           if (mounted)
             {
               setState(() {

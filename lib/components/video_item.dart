@@ -18,8 +18,8 @@ var isFollowing = '+ Follow'.obs;
 List<Data> commentsList = [];
 
 class VideoApp extends StatefulWidget {
-  String url, description, songName, songDescription, profileImage;
-  int likes, comments, id;
+  final String url, description, songName, songDescription, profileImage;
+  final int likes, comments, id;
   final int pageIndex;
   final int currentPageIndex;
   final bool isPaused;
@@ -52,19 +52,20 @@ class _VideoItemState extends State<VideoApp> {
     setVideoPlayer();
   }
 
-  void setVideoPlayer() async {
-    _controller = VideoPlayerController.network(widget.url)
-    ..initialize
-    ..setLooping(false);
+  Future<VideoPlayerController> setVideoPlayer() async {
+    _controller =  VideoPlayerController.network(widget.url)
+      ..initialize
+      ..setLooping(false);
     initialized = true;
     setState(() {});
+    return _controller!;
   }
 
   @override
   void dispose() {
     _controller?.dispose();
     super.dispose();
-  }  
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -136,7 +137,7 @@ class _VideoItemState extends State<VideoApp> {
                   },
                   child: Column(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.chat,
                         color: Colors.white,
                       ),
@@ -194,7 +195,7 @@ class _VideoItemState extends State<VideoApp> {
                             color: Colors.white,
                             fontWeight: FontWeight.bold),
                       ),
-                      SizedBox(
+                      const SizedBox(
                         width: 10,
                       ),
                       Container(
@@ -352,14 +353,15 @@ class _VideoItemState extends State<VideoApp> {
                         alignment: Alignment.center,
                         child: CircleAvatar(
                             backgroundImage: NetworkImage(
-                                profileUrl + element.avatar.toString())),
+                              element.avatar==null?
+                                profileUrl + element.avatar.toString():avatarPlaceholder)),
                       ),
                       const SizedBox(
                         width: 5,
                       ),
                       Text(
                         element.name.toString(),
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontSize: 14, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(
@@ -379,7 +381,7 @@ class _VideoItemState extends State<VideoApp> {
                       )
                     ],
                   ),
-                  Divider(
+                 const Divider(
                     thickness: 1,
                   )
                 ],

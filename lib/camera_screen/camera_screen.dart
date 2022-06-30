@@ -16,12 +16,14 @@ import 'package:ffmpeg_kit_flutter_min_gpl/statistics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:horizontal_picker/horizontal_picker.dart';
+import 'package:image_downloader/image_downloader.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:video_app/camera_screen/preview_screen.dart';
 import 'package:video_app/camera_screen/process_video.dart';
+import 'package:video_app/components/constant.dart';
 import 'package:video_app/home/home_screen.dart';
 import 'package:video_app/video_editor/video_editor.dart';
 import 'package:video_player/video_player.dart';
@@ -30,7 +32,7 @@ import 'package:get/get.dart';
 import '../main.dart';
 
 var timer = 15.obs;
-
+var _currentfilter = filterUrl.obs;
 Timer? time;
 
 class CameraScreen extends StatefulWidget {
@@ -319,6 +321,7 @@ class _CameraScreenState extends State<CameraScreen>
               '$directory/hello.$fileFormat',
             )
                 .then((value) async {
+              _downloadImage(_currentfilter.value);
               Get.off(const ProcessVideo());
             });
 
@@ -722,14 +725,16 @@ class _CameraScreenState extends State<CameraScreen>
                               ),
                             ),
 
-                            // Container(
-                            //     width: MediaQuery.of(context).size.width,
-                            //     height: MediaQuery.of(context).size.height,
-                            //     child: CachedNetworkImage(
-                            //       fit: BoxFit.cover,
-                            //       imageUrl:
-                            //           'https://www.onlygfx.com/wp-content/uploads/2019/04/9-crack-overlay-background-1.png',
-                            //     ))
+                            IgnorePointer(
+                              ignoring: true,
+                              child: Container(
+                                  width: MediaQuery.of(context).size.width,
+                                  height: MediaQuery.of(context).size.height,
+                                  child: CachedNetworkImage(
+                                    fit: BoxFit.cover,
+                                    imageUrl: _currentfilter.value,
+                                  )),
+                            )
                           ],
                         ),
                       ),
@@ -815,6 +820,9 @@ class _CameraScreenState extends State<CameraScreen>
                                     ),
                                   ],
                                 ),
+                              ),
+                              Row(
+                                children: filterListLayout(),
                               )
                             ],
                           ),
@@ -859,5 +867,40 @@ class _CameraScreenState extends State<CameraScreen>
               ),
       ),
     );
+  }
+
+  List<Widget> filterListLayout() {
+    List<Widget> filterlist = [];
+    filterUrlList.forEach((element) {
+      filterlist.add(Container(
+          margin: EdgeInsets.only(left: 10, right: 10),
+          decoration: BoxDecoration(color: Colors.white),
+          width: 50,
+          height: 50,
+          child: InkWell(
+            onTap: () => setState(() {
+              _currentfilter.value=element;
+            }),
+            child: CachedNetworkImage(imageUrl: element)),));
+    });
+    return filterlist;
+  }
+
+  void _downloadImage(String url) async {
+    try {
+      // Saved with this method.
+      var imageId = await ImageDownloader.downloadImage(url);
+      if (imageId == null) {
+        return;
+      }
+
+      // Below is a method of obtaining saved image information.
+      var fileName = await ImageDownloader.findName(imageId);
+      var path = await ImageDownloader.findPath(imageId);
+      var size = await ImageDownloader.findByteSize(imageId);
+      var mimeType = await ImageDownloader.findMimeType(imageId);
+    } on PlatformException catch (error) {
+      print(error);
+    }
   }
 }
