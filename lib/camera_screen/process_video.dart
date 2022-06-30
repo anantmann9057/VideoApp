@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:get/get.dart';
 import 'package:video_app/home/home_screen.dart';
+import 'package:video_app/video_editor/video_editor.dart';
 
 class ProcessVideo extends StatefulWidget {
   final String fileName, filePath;
@@ -57,10 +58,8 @@ class _ProcessVideoState extends State<ProcessVideo> {
       await FFmpegKit.execute(
               '-i $directory/hello.mp4 -i ${widget.filePath} -filter_complex "[0:v]overlay=0:0" $directory/${widget.fileName}.mp4')
           .then((value) {
-        var file = File(widget.filePath);
-        file.delete().then((value) {
-          Get.off(const HomeScreen());
-        });
+        var videoFile = File('$directory/${widget.fileName}.mp4');
+        Get.off(VideoEditor(file: videoFile));
       });
     });
   }
