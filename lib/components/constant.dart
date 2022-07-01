@@ -12,7 +12,16 @@ var filterUrl2 =
 var filterUrl3 = 'https://www.onlygfx.com/dust-overlay-png-transparent/';
 
 var filterUrl4 =
-    'https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/a5369e14-259e-4dc1-b331-a1216b695b74/d73ass0-e6091487-b351-4449-aacf-ed85a70f1da7.png/v1/fill/w_800,h_800,strp/grunge_texture_overlay_png_by_fictionchick_d73ass0-fullview.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9ODAwIiwicGF0aCI6IlwvZlwvYTUzNjllMTQtMjU5ZS00ZGMxLWIzMzEtYTEyMTZiNjk1Yjc0XC9kNzNhc3MwLWU2MDkxNDg3LWIzNTEtNDQ0OS1hYWNmLWVkODVhNzBmMWRhNy5wbmciLCJ3aWR0aCI6Ijw9ODAwIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmltYWdlLm9wZXJhdGlvbnMiXX0.M6dkpnFTqYK6eiUVcjyVm_oBMgbqi6qz59vRbbbklnk';
+    "http://www.textures4photoshop.com/tex/thumbs/dripping-blood-overlay-with-drops-splashes-png-transparent-background-240.png";
 var filterUrl5 = 'https://www.nicepng.com/maxp/u2q8a9r5a9q8a9u2/';
 
-List<String> filterUrlList = [filterUrl, filterUrl2, filterUrl4, filterUrl4];
+List<String> filterUrlList = [
+  filterUrl,
+  filterUrl2,
+  filterUrl4,
+  "https://www.pngmart.com/files/12/Stream-Overlay-PNG-Free-Download.png",
+  "https://cdn.pixabay.com/photo/2020/04/15/05/08/flames-5045134_1280.png",
+  "http://www.textures4photoshop.com/tex/thumbs/free-clouds-sky-overlay-png-for-photoshop-thumb41.png",
+  "https://data.whicdn.com/images/343404003/original.png",
+  "https://www.onlygfx.com/wp-content/uploads/2019/04/9-crack-overlay-background-6.png"
+];

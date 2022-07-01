@@ -44,12 +44,12 @@ class _ProcessVideoState extends State<ProcessVideo> {
     FFmpegKitConfig.getSafParameterForWrite(widget.filePath)
         .then((safUrl) async {
       //                  '-i $directory/hello.mp4 -i ${value!.path.toString()} -i $downloadsDirectory/thrilllogo.png -filter_complex "[2:v]scale=250x200,[0:v]overlay=0:0,[1:v]overlay=0:0" $safUrl.mp4')
-
+      var mediaQuery = MediaQuery.of(context).size;
       await FFmpegKit.execute(
-              '-i $directory/hello.mp4 -i ${widget.filePath} -filter_complex "[0:v]overlay=0:0" -vcodec libx265 -crf 28 $directory/${widget.fileName}.mp4')
+              '-i $directory/hello.mp4 -i ${widget.filePath} -filter_complex "[0:v]overlay=0:0" -vcodec libx265  -preset ultrafast -s 800x600 $directory/${widget.fileName}.mp4')
           .then((value) {
         var videoFile = File('$directory/${widget.fileName}.mp4');
-        Get.off(VideoEditor(file: videoFile));
+        Get.off(() => VideoEditor(file: videoFile));
       });
     });
   }

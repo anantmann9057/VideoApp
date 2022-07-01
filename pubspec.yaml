@@ -70,7 +70,7 @@ dependencies:
   path: ^1.8.0 # update to `1.8.1` causes #79
   helpers: ^1.1.4
   image_picker: ^0.8.5+3
-  camera: ^0.9.8+1
+  camera: ^0.9.8
   permission_handler: ^10.0.0
   horizontal_picker: ^1.2.0
   external_path: ^1.0.1

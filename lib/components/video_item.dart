@@ -48,17 +48,13 @@ class _VideoItemState extends State<VideoApp> {
 
   @override
   void initState() {
-    super.initState();
-    setVideoPlayer();
-  }
-
-  Future<VideoPlayerController> setVideoPlayer() async {
-    _controller =  VideoPlayerController.network(widget.url)
+    print(widget.url);
+    _controller = VideoPlayerController.network(widget.url)
       ..initialize
-      ..setLooping(false);
-    initialized = true;
+      ..setLooping(false).then((value) => initialized = true);
+
     setState(() {});
-    return _controller!;
+    super.initState();
   }
 
   @override
@@ -82,28 +78,6 @@ class _VideoItemState extends State<VideoApp> {
           child: Stack(
         alignment: Alignment.centerRight,
         children: [
-          Center(
-              child: GestureDetector(
-                  onTapUp: (details) => setState(() {
-                        _controller!.play();
-                      }),
-                  onDoubleTap: () {
-                    setState(() {
-                      visible.value = true;
-                      Future.delayed(const Duration(seconds: 2), () {
-                        // Here you can write your code
-                        setState(() {
-                          visible.value = false;
-                        });
-                      });
-                    });
-                  },
-                  onTapDown: (pressed) {
-                    setState(() {
-                      _controller!.pause;
-                    });
-                  },
-                  child: VideoPlayer(_controller!))),
           Container(
             alignment: Alignment.centerRight,
             margin: const EdgeInsets.only(right: 10),
@@ -251,6 +225,28 @@ class _VideoItemState extends State<VideoApp> {
               ),
             ),
           ),
+          Center(
+              child: GestureDetector(
+                  onTapUp: (details) => setState(() {
+                        _controller!.play();
+                      }),
+                  onDoubleTap: () {
+                    setState(() {
+                      visible.value = true;
+                      Future.delayed(const Duration(seconds: 2), () {
+                        // Here you can write your code
+                        setState(() {
+                          visible.value = false;
+                        });
+                      });
+                    });
+                  },
+                  onTapDown: (pressed) {
+                    setState(() {
+                      _controller!.pause;
+                    });
+                  },
+                  child: VideoPlayer(_controller!))),
         ],
       )),
     );
@@ -352,9 +348,9 @@ class _VideoItemState extends State<VideoApp> {
                       Container(
                         alignment: Alignment.center,
                         child: CircleAvatar(
-                            backgroundImage: NetworkImage(
-                              element.avatar==null?
-                                profileUrl + element.avatar.toString():avatarPlaceholder)),
+                            backgroundImage: NetworkImage(element.avatar == null
+                                ? profileUrl + element.avatar.toString()
+                                : avatarPlaceholder)),
                       ),
                       const SizedBox(
                         width: 5,
@@ -381,7 +377,7 @@ class _VideoItemState extends State<VideoApp> {
                       )
                     ],
                   ),
-                 const Divider(
+                  const Divider(
                     thickness: 1,
                   )
                 ],

@@ -8,11 +8,12 @@ import 'package:camera/camera.dart';
 
 List<CameraDescription> cameras = [];
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  DataController controller = DataController();
-  SharedPreferences prefs = await controller.prefs();
-  cameras = await availableCameras();
-
+  try {
+    WidgetsFlutterBinding.ensureInitialized();
+    cameras = await availableCameras();
+  } on CameraException catch (e) {
+    print('Error in fetching the cameras: $e');
+  }
   runApp(GetMaterialApp(
     debugShowCheckedModeBanner: false,
     initialBinding: DataBindings(),

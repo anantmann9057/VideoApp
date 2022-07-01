@@ -1,39 +1,30 @@
 import 'dart:async';
 import 'dart:developer';
-import 'dart:ffi';
 import 'dart:io';
 import 'dart:ui';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:camera/camera.dart';
 import 'package:external_path/external_path.dart';
-import 'package:ffmpeg_kit_flutter_min_gpl/ffmpeg_kit.dart';
-import 'package:ffmpeg_kit_flutter_min_gpl/ffmpeg_kit_config.dart';
-import 'package:ffmpeg_kit_flutter_min_gpl/ffmpeg_session.dart';
-import 'package:ffmpeg_kit_flutter_min_gpl/log.dart';
-import 'package:ffmpeg_kit_flutter_min_gpl/session.dart';
-import 'package:ffmpeg_kit_flutter_min_gpl/statistics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 import 'package:horizontal_picker/horizontal_picker.dart';
 import 'package:image_downloader/image_downloader.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:video_app/camera_screen/preview_screen.dart';
 import 'package:video_app/camera_screen/process_video.dart';
 import 'package:video_app/components/constant.dart';
-import 'package:video_app/home/home_screen.dart';
 import 'package:video_app/video_editor/video_editor.dart';
 import 'package:video_player/video_player.dart';
 
-import 'package:get/get.dart';
 import '../main.dart';
 
 var timer = 15.obs;
 var _currentfilter = filterUrl.obs;
 Timer? time;
+CameraController? _controller;
 
 class CameraScreen extends StatefulWidget {
   @override
@@ -42,9 +33,6 @@ class CameraScreen extends StatefulWidget {
 
 class _CameraScreenState extends State<CameraScreen>
     with WidgetsBindingObserver {
-  CameraController? controller;
-  VideoPlayerController? videoController;
-
   File? _imageFile;
   File? _videoFile;
 
@@ -119,40 +107,10 @@ class _CameraScreenState extends State<CameraScreen>
     }
   }
 
-  Future<XFile?> takePicture() async {
-    final CameraController? cameraController = controller;
-
-    if (cameraController!.value.isTakingPicture) {
-      // A capture is already pending, do nothing.
-      return null;
-    }
-
-    try {
-      XFile file = await cameraController.takePicture();
-      return file;
-    } on CameraException catch (e) {
-      print('Error occured while taking picture: $e');
-      return null;
-    }
-  }
-
-  Future<void> _startVideoPlayer() async {
-    if (_videoFile != null) {
-      videoController = VideoPlayerController.file(_videoFile!);
-      await videoController!.initialize().then((_) {
-        // Ensure the first frame is shown after the video is initialized,
-        // even before the play button has been pressed.
-        setState(() {});
-      });
-      await videoController!.setLooping(true);
-      await videoController!.play();
-    }
-  }
-
   Future<void> startVideoRecording() async {
-    final CameraController? cameraController = controller;
+    final CameraController? cameraController = _controller;
 
-    if (controller!.value.isRecordingVideo) {
+    if (_controller!.value.isRecordingVideo) {
       // A recording has already started, do nothing.
       return;
     }
@@ -161,7 +119,6 @@ class _CameraScreenState extends State<CameraScreen>
       await cameraController!.startVideoRecording();
       setState(() {
         _isRecordingInProgress = true;
-        print(_isRecordingInProgress);
         startTimer();
       });
     } on CameraException catch (e) {
@@ -170,13 +127,13 @@ class _CameraScreenState extends State<CameraScreen>
   }
 
   Future<XFile?> stopVideoRecording() async {
-    if (!controller!.value.isRecordingVideo) {
+    if (!_controller!.value.isRecordingVideo) {
       // Recording is already is stopped state
       return null;
     }
 
     try {
-      XFile? rawVideo = await controller!.stopVideoRecording();
+      XFile? rawVideo = await _controller!.stopVideoRecording();
       File videoFile = File(rawVideo!.path);
 
       int currentUnix = DateTime.now().millisecondsSinceEpoch;
@@ -204,27 +161,27 @@ class _CameraScreenState extends State<CameraScreen>
   }
 
   Future<void> pauseVideoRecording() async {
-    if (!controller!.value.isRecordingVideo) {
+    if (!_controller!.value.isRecordingVideo) {
       time?.cancel();
       // Video recording is not in progress
       return;
     }
 
     try {
-      await controller!.pauseVideoRecording();
+      await _controller!.pauseVideoRecording();
     } on CameraException catch (e) {
       print('Error pausing video recording: $e');
     }
   }
 
   Future<void> resumeVideoRecording() async {
-    if (!controller!.value.isRecordingVideo) {
+    if (!_controller!.value.isRecordingVideo) {
       // No video recording was in progress
       return;
     }
 
     try {
-      await controller!.resumeVideoRecording();
+      await _controller!.resumeVideoRecording();
     } on CameraException catch (e) {
       print('Error resuming video recording: $e');
     }
@@ -236,7 +193,7 @@ class _CameraScreenState extends State<CameraScreen>
   }
 
   void onNewCameraSelected(CameraDescription cameraDescription) async {
-    final previousCameraController = controller;
+    final previousCamera_controller = _controller;
 
     final CameraController cameraController = CameraController(
       cameraDescription,
@@ -244,17 +201,17 @@ class _CameraScreenState extends State<CameraScreen>
       imageFormatGroup: ImageFormatGroup.jpeg,
     );
 
-    await previousCameraController?.dispose();
+    await previousCamera_controller?.dispose();
 
     resetCameraValues();
 
     if (mounted) {
       setState(() {
-        controller = cameraController;
+        _controller = cameraController;
       });
     }
 
-    // Update UI if controller updated
+    // Update UI if _controller updated
     cameraController.addListener(() {
       if (mounted) setState(() {});
     });
@@ -276,20 +233,20 @@ class _CameraScreenState extends State<CameraScreen>
             .then((value) => _minAvailableZoom = value),
       ]);
 
-      _currentFlashMode = controller!.value.flashMode;
+      _currentFlashMode = _controller!.value.flashMode;
     } on CameraException catch (e) {
       print('Error initializing camera: $e');
     }
 
     if (mounted) {
       setState(() {
-        _isCameraInitialized = controller!.value.isInitialized;
+        _isCameraInitialized = _controller!.value.isInitialized;
       });
     }
   }
 
   void onViewFinderTap(TapDownDetails details, BoxConstraints constraints) {
-    if (controller == null) {
+    if (_controller == null) {
       return;
     }
 
@@ -297,16 +254,14 @@ class _CameraScreenState extends State<CameraScreen>
       details.localPosition.dx / constraints.maxWidth,
       details.localPosition.dy / constraints.maxHeight,
     );
-    controller!.setExposurePoint(offset);
-    controller!.setFocusPoint(offset);
+    _controller!.setExposurePoint(offset);
+    _controller!.setFocusPoint(offset);
   }
 
   @override
   void initState() {
     // Hide the status bar in Android
-    SystemChrome.setEnabledSystemUIOverlays([]);
     getPermissionStatus();
-
     super.initState();
   }
 
@@ -337,7 +292,7 @@ class _CameraScreenState extends State<CameraScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    final CameraController? cameraController = controller;
+    final CameraController? cameraController = _controller;
 
     // App state changed before we got the chance to initialize.
     if (cameraController == null || !cameraController.value.isInitialized) {
@@ -353,8 +308,7 @@ class _CameraScreenState extends State<CameraScreen>
 
   @override
   void dispose() {
-    controller?.dispose();
-    videoController?.dispose();
+    _controller?.dispose();
     time?.cancel();
     super.dispose();
   }
@@ -369,11 +323,11 @@ class _CameraScreenState extends State<CameraScreen>
                 ? Column(
                     children: [
                       AspectRatio(
-                        aspectRatio: 1 / controller!.value.aspectRatio,
+                        aspectRatio: 1 / _controller!.value.aspectRatio,
                         child: Stack(
                           children: [
                             CameraPreview(
-                              controller!,
+                              _controller!,
                               child: LayoutBuilder(builder:
                                   (BuildContext context,
                                       BoxConstraints constraints) {
@@ -451,7 +405,7 @@ class _CameraScreenState extends State<CameraScreen>
                                               _isCameraInitialized = false;
                                             });
                                             onNewCameraSelected(
-                                                controller!.description);
+                                                _controller!.description);
                                           },
                                           hint: Text("Select item"),
                                         ),
@@ -494,7 +448,7 @@ class _CameraScreenState extends State<CameraScreen>
                                             setState(() {
                                               _currentExposureOffset = value;
                                             });
-                                            await controller!
+                                            await _controller!
                                                 .setExposureOffset(value);
                                           },
                                         ),
@@ -514,7 +468,7 @@ class _CameraScreenState extends State<CameraScreen>
                                             setState(() {
                                               _currentZoomLevel = value;
                                             });
-                                            await controller!
+                                            await _controller!
                                                 .setZoomLevel(value);
                                           },
                                         ),
@@ -566,7 +520,7 @@ class _CameraScreenState extends State<CameraScreen>
                                       InkWell(
                                         onTap: _isRecordingInProgress
                                             ? () async {
-                                                if (controller!
+                                                if (_controller!
                                                     .value.isRecordingPaused) {
                                                   await resumeVideoRecording();
                                                 } else {
@@ -595,7 +549,7 @@ class _CameraScreenState extends State<CameraScreen>
                                               size: 60,
                                             ),
                                             _isRecordingInProgress
-                                                ? controller!
+                                                ? _controller!
                                                         .value.isRecordingPaused
                                                     ? const Icon(
                                                         Icons.play_arrow,
@@ -687,22 +641,7 @@ class _CameraScreenState extends State<CameraScreen>
                                                   )
                                                 : null,
                                           ),
-                                          child: videoController != null &&
-                                                  videoController!
-                                                      .value.isInitialized
-                                              ? ClipRRect(
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                          8.0),
-                                                  child: AspectRatio(
-                                                    aspectRatio:
-                                                        videoController!
-                                                            .value.aspectRatio,
-                                                    child: VideoPlayer(
-                                                        videoController!),
-                                                  ),
-                                                )
-                                              : Container(),
+                                          child: Container(),
                                         ),
                                       ),
                                     ],
@@ -730,7 +669,7 @@ class _CameraScreenState extends State<CameraScreen>
                                         setState(() {
                                           _currentFlashMode = FlashMode.off;
                                         });
-                                        await controller!.setFlashMode(
+                                        await _controller!.setFlashMode(
                                           FlashMode.off,
                                         );
                                       },
@@ -747,7 +686,7 @@ class _CameraScreenState extends State<CameraScreen>
                                         setState(() {
                                           _currentFlashMode = FlashMode.auto;
                                         });
-                                        await controller!.setFlashMode(
+                                        await _controller!.setFlashMode(
                                           FlashMode.auto,
                                         );
                                       },
@@ -764,7 +703,7 @@ class _CameraScreenState extends State<CameraScreen>
                                         setState(() {
                                           _currentFlashMode = FlashMode.always;
                                         });
-                                        await controller!.setFlashMode(
+                                        await _controller!.setFlashMode(
                                           FlashMode.always,
                                         );
                                       },
@@ -781,7 +720,7 @@ class _CameraScreenState extends State<CameraScreen>
                                         setState(() {
                                           _currentFlashMode = FlashMode.torch;
                                         });
-                                        await controller!.setFlashMode(
+                                        await _controller!.setFlashMode(
                                           FlashMode.torch,
                                         );
                                       },
@@ -796,8 +735,11 @@ class _CameraScreenState extends State<CameraScreen>
                                   ],
                                 ),
                               ),
-                              Row(
-                                children: filterListLayout(),
+                              SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Row(
+                                  children: filterListLayout(),
+                                ),
                               )
                             ],
                           ),
@@ -848,16 +790,22 @@ class _CameraScreenState extends State<CameraScreen>
     List<Widget> filterlist = [];
     filterUrlList.forEach((element) {
       filterlist.add(Container(
-        margin: const EdgeInsets.only(left: 10, right: 10),
-        decoration: const BoxDecoration(color: Colors.white),
-        width: 50,
-        height: 50,
-        child: InkWell(
+          margin: const EdgeInsets.only(left: 10, right: 10),
+          decoration: const BoxDecoration(color: Colors.transparent),
+          child: InkWell(
             onTap: () => setState(() {
-                  _currentfilter.value = element;
-                }),
-            child: CachedNetworkImage(imageUrl: element)),
-      ));
+              _currentfilter.value = element;
+            }),
+            child: CircleAvatar(
+              backgroundColor: Colors.white,
+              radius: 35.0,
+              child: CircleAvatar(
+                backgroundColor: Colors.transparent,
+                backgroundImage: NetworkImage(element),
+                radius: 30.0,
+              ),
+            ),
+          )));
     });
     return filterlist;
   }
@@ -877,7 +825,8 @@ class _CameraScreenState extends State<CameraScreen>
       var size = await ImageDownloader.findByteSize(imageId);
       var mimeType = await ImageDownloader.findMimeType(imageId);
 
-      Get.to(ProcessVideo(fileName.toString(), path.toString()));
+      _controller!.dispose().then((value) =>
+          Get.off(() => ProcessVideo(fileName.toString(), path.toString())));
     } on PlatformException catch (error) {
       print(error);
     }

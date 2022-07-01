@@ -75,7 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: PreloadPageView.builder(
               controller: preloadPageController,
               scrollDirection: Axis.vertical,
-              preloadPagesCount: 5,
+              preloadPagesCount: 10,
               itemCount: videosList.length, //Notice this
               itemBuilder: (ctx, index) => VideoApp(
                     'https://thrillvideo.s3.amazonaws.com/test/' +
@@ -118,11 +118,12 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Future<void> getVideos() {
-    return controller.getVideos().then((value) => {
+  void getVideos() {
+    controller.getVideos().then((value) => {
           if (mounted)
             {
               setState(() {
+                print(value.data!.first.video);
                 videosList = value.data!;
               })
             }
