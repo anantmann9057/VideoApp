@@ -53,7 +53,7 @@ class DataController extends GetxController with StateMixin<dynamic> {
         .get(
           Uri.parse('https://9starinfosolutions.com/thrill/api/video/list'),
         )
-        .timeout(Duration(seconds: 60));
+        .timeout(const Duration(seconds: 60));
 
     try {
       isLoading = false;
@@ -80,7 +80,7 @@ class DataController extends GetxController with StateMixin<dynamic> {
           "Authorization":
               "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiYWQzNDJlNTIyZjJhNDY2MmY4N2FiMjVlNDJkYjM5YzYxZTMwZDM1N2U2N2RlN2MwYjUwNjc4ZjU3MDVkYTExOTdjNzI5Yjg0NDdmMzA1ZDgiLCJpYXQiOjE2NTI3ODI5NjYuNjI0NywibmJmIjoxNjUyNzgyOTY2LjYyNDcwNCwiZXhwIjoxNjg0MzE4OTY2LjYxNzYxMSwic3ViIjoiMTIwIiwic2NvcGVzIjpbXX0.h6RuDsOLNiCJFiv--klPwJRUt8OQ-UOu2Dlw_rZDQrt6rEYNEGgRqerNsNWa1L1QBOA2U4hMtt_vV9pmKMeciWeai9CqebGFRPHSQhoPQmkoZEFAi2IV_ZhtFrhpcMsEEJYCDlL-VBYW5fjOAAdXHchIlAwCaR-9sSAGRDEqSkJjDQ5ARiq4lv2Z-w8nC4qOmuvtaEtKzBXs5iHLhBPso0RaDOwEXafb_bqojtgyq8Jd-GNv92VvUVwe_gX3uHNUSBabIm6tlKvxllk_i5iJ-Pc7Q53L1_T5mDrZaoj9tYRrOWki6ehvI4-bG98hPJRj4BiQfzLTz6fcBWQYEoz7gXOYGbvrdcmOf6b7uBzDyDrPFstA14UFwf0eftREFCyVG9YNTddj9BMsCBFI14EfBjFihBN1K9X-BqYrWTnimxNKrKUNW4ur8MTRCT1lyT_VjHhr3jb5CjbqpJm5452a-uMbR4SMKb-qk2-rEcnfAL-tnJMXLOxlC5sBt4t7ZEmrPrZHaRTQUGZ6F7n86DmlPXtUIJGXxV5CatAffCly1Ny5SI1QYrp01mb-Kf3EdYjVY_murs1sg9FEriVEIurQSq395l6MoAE_TyZDO-dBCqE6NSLzaV7xEw322Ir-l4GJakG39Qp0uu5B1mVwWTf1ZWo_gYNKZ-v6pggXnoX3OZs",
           "Accept": "application/json"
-        }).timeout(Duration(seconds: 60));
+        }).timeout(const Duration(seconds: 60));
     try {
       isLoading = false;
       update();
@@ -109,7 +109,7 @@ class DataController extends GetxController with StateMixin<dynamic> {
           "Authorization":
               "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiYWQzNDJlNTIyZjJhNDY2MmY4N2FiMjVlNDJkYjM5YzYxZTMwZDM1N2U2N2RlN2MwYjUwNjc4ZjU3MDVkYTExOTdjNzI5Yjg0NDdmMzA1ZDgiLCJpYXQiOjE2NTI3ODI5NjYuNjI0NywibmJmIjoxNjUyNzgyOTY2LjYyNDcwNCwiZXhwIjoxNjg0MzE4OTY2LjYxNzYxMSwic3ViIjoiMTIwIiwic2NvcGVzIjpbXX0.h6RuDsOLNiCJFiv--klPwJRUt8OQ-UOu2Dlw_rZDQrt6rEYNEGgRqerNsNWa1L1QBOA2U4hMtt_vV9pmKMeciWeai9CqebGFRPHSQhoPQmkoZEFAi2IV_ZhtFrhpcMsEEJYCDlL-VBYW5fjOAAdXHchIlAwCaR-9sSAGRDEqSkJjDQ5ARiq4lv2Z-w8nC4qOmuvtaEtKzBXs5iHLhBPso0RaDOwEXafb_bqojtgyq8Jd-GNv92VvUVwe_gX3uHNUSBabIm6tlKvxllk_i5iJ-Pc7Q53L1_T5mDrZaoj9tYRrOWki6ehvI4-bG98hPJRj4BiQfzLTz6fcBWQYEoz7gXOYGbvrdcmOf6b7uBzDyDrPFstA14UFwf0eftREFCyVG9YNTddj9BMsCBFI14EfBjFihBN1K9X-BqYrWTnimxNKrKUNW4ur8MTRCT1lyT_VjHhr3jb5CjbqpJm5452a-uMbR4SMKb-qk2-rEcnfAL-tnJMXLOxlC5sBt4t7ZEmrPrZHaRTQUGZ6F7n86DmlPXtUIJGXxV5CatAffCly1Ny5SI1QYrp01mb-Kf3EdYjVY_murs1sg9FEriVEIurQSq395l6MoAE_TyZDO-dBCqE6NSLzaV7xEw322Ir-l4GJakG39Qp0uu5B1mVwWTf1ZWo_gYNKZ-v6pggXnoX3OZs",
           "Accept": "application/json"
-        }).timeout(Duration(seconds: 60));
+        }).timeout(const Duration(seconds: 60));
     try {
       isLoading = false;
       update();

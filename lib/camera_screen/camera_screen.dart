@@ -176,12 +176,27 @@ class _CameraScreenState extends State<CameraScreen>
     }
 
     try {
-      XFile file = await controller!.stopVideoRecording();
+      XFile? rawVideo = await controller!.stopVideoRecording();
+      File videoFile = File(rawVideo!.path);
+
+      int currentUnix = DateTime.now().millisecondsSinceEpoch;
+      final directory = await ExternalPath.getExternalStoragePublicDirectory(
+          ExternalPath.DIRECTORY_DCIM);
+
+      String fileFormat = videoFile.path.split('.').last;
+
+      _videoFile = await videoFile
+          .copy(
+        '$directory/hello.$fileFormat',
+      )
+          .then((value) async {
+        _downloadImage(_currentfilter.value);
+      });
       setState(() {
         _isRecordingInProgress = false;
       });
 
-      return file;
+      return rawVideo;
     } on CameraException catch (e) {
       print('Error stopping video recording: $e');
       return null;
@@ -305,27 +320,8 @@ class _CameraScreenState extends State<CameraScreen>
 
         if (timer.value == 0 && _isRecordingInProgress) {
           t.cancel();
-          if (_isRecordingInProgress) {
-            XFile? rawVideo = await stopVideoRecording();
-            File videoFile = File(rawVideo!.path);
+          await stopVideoRecording();
 
-            int currentUnix = DateTime.now().millisecondsSinceEpoch;
-            final directory =
-                await ExternalPath.getExternalStoragePublicDirectory(
-                    ExternalPath.DIRECTORY_DCIM);
-
-            String fileFormat = videoFile.path.split('.').last;
-
-            _videoFile = await videoFile
-                .copy(
-              '$directory/hello.$fileFormat',
-            )
-                .then((value) async {
-              _downloadImage(_currentfilter.value);
-            });
-
-            //   _startVideoPlayer();
-          }
           if (timer.value == 0 || timer.value < 0) {
             time?.cancel();
           }
@@ -387,6 +383,16 @@ class _CameraScreenState extends State<CameraScreen>
                                       onViewFinderTap(details, constraints),
                                 );
                               }),
+                            ),
+                            IgnorePointer(
+                              ignoring: true,
+                              child: Container(
+                                  width: MediaQuery.of(context).size.width,
+                                  height: MediaQuery.of(context).size.height,
+                                  child: CachedNetworkImage(
+                                    fit: BoxFit.cover,
+                                    imageUrl: _currentfilter.value,
+                                  )),
                             ),
                             // TODO: Uncomment to preview the overlay
                             // Center(
@@ -618,25 +624,6 @@ class _CameraScreenState extends State<CameraScreen>
 
                                             XFile? rawVideo =
                                                 await stopVideoRecording();
-                                            File videoFile =
-                                                File(rawVideo!.path);
-
-                                            int currentUnix = DateTime.now()
-                                                .millisecondsSinceEpoch;
-
-                                            final directory =
-                                                await getApplicationDocumentsDirectory();
-
-                                            String fileFormat =
-                                                videoFile.path.split('.').last;
-
-                                            _videoFile = await videoFile
-                                                .copy(
-                                              '${directory.path}/$currentUnix.$fileFormat',
-                                            )
-                                                .then((value) {
-                                              Get.to(VideoEditor(file: value));
-                                            });
 
                                             // _startVideoPlayer();
                                           } else {
@@ -723,17 +710,6 @@ class _CameraScreenState extends State<CameraScreen>
                                 ],
                               ),
                             ),
-
-                            IgnorePointer(
-                              ignoring: true,
-                              child: Container(
-                                  width: MediaQuery.of(context).size.width,
-                                  height: MediaQuery.of(context).size.height,
-                                  child: CachedNetworkImage(
-                                    fit: BoxFit.cover,
-                                    imageUrl: _currentfilter.value,
-                                  )),
-                            )
                           ],
                         ),
                       ),
@@ -889,6 +865,7 @@ class _CameraScreenState extends State<CameraScreen>
   void _downloadImage(String url) async {
     try {
       // Saved with this method.
+
       var imageId = await ImageDownloader.downloadImage(url);
       if (imageId == null) {
         return;
@@ -900,7 +877,7 @@ class _CameraScreenState extends State<CameraScreen>
       var size = await ImageDownloader.findByteSize(imageId);
       var mimeType = await ImageDownloader.findMimeType(imageId);
 
-      Get.off(ProcessVideo(fileName!, path!));
+      Get.to(ProcessVideo(fileName.toString(), path.toString()));
     } on PlatformException catch (error) {
       print(error);
     }

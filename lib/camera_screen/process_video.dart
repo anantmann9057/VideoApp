@@ -41,22 +41,12 @@ class _ProcessVideoState extends State<ProcessVideo> {
     final directory = await ExternalPath.getExternalStoragePublicDirectory(
         ExternalPath.DIRECTORY_DCIM);
 
-    // final ImagePicker _picker = ImagePicker();
-    // final downloadsDirectory =
-    //     await ExternalPath.getExternalStoragePublicDirectory(
-    //         ExternalPath.DIRECTORY_DOWNLOADS);
-    // // Pick an image
-    // final XFile? image =
-    //     await _picker.pickImage(source: ImageSource.gallery).then((value) {
-    //
-    // });
-
     FFmpegKitConfig.getSafParameterForWrite(widget.filePath)
         .then((safUrl) async {
       //                  '-i $directory/hello.mp4 -i ${value!.path.toString()} -i $downloadsDirectory/thrilllogo.png -filter_complex "[2:v]scale=250x200,[0:v]overlay=0:0,[1:v]overlay=0:0" $safUrl.mp4')
 
       await FFmpegKit.execute(
-              '-i $directory/hello.mp4 -i ${widget.filePath} -filter_complex "[0:v]overlay=0:0" $directory/${widget.fileName}.mp4')
+              '-i $directory/hello.mp4 -i ${widget.filePath} -filter_complex "[0:v]overlay=0:0" -vcodec libx265 -crf 28 $directory/${widget.fileName}.mp4')
           .then((value) {
         var videoFile = File('$directory/${widget.fileName}.mp4');
         Get.off(VideoEditor(file: videoFile));
