@@ -1,6 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:preload_page_view/preload_page_view.dart';
 import 'package:video_app/camera_screen/camera_screen.dart';
 import 'package:video_app/components/data_controller.dart';
@@ -27,8 +26,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final ImagePicker _picker = ImagePicker();
-
   @override
   void initState() {
     // TODO: implement initState
@@ -44,9 +41,9 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: Colors.black26,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Get.to(CameraScreen());
-          // _pickVideo();
+        onPressed: () async {
+          //await controller.generateWaveForm();
+           Get.to(CameraScreen());
         },
         tooltip: 'Increment',
         child: Container(

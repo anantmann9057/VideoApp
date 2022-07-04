@@ -1,20 +1,22 @@
 import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:external_path/external_path.dart';
 import 'package:flutter/material.dart';
-import 'package:get/instance_manager.dart';
+import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 import 'package:helpers/helpers.dart'
     show OpacityTransition, SwipeTransition, AnimatedInteractiveViewer;
-import 'package:image_picker/image_picker.dart';
+import 'package:image_downloader/image_downloader.dart';
 import 'package:video_app/home/home_screen.dart';
 import 'package:video_app/video_editor/crop_screen.dart';
 import 'package:video_editor/video_editor.dart';
-import 'package:video_player/video_player.dart';
-import 'package:get/get.dart';
 
 class VideoEditor extends StatefulWidget {
-  const VideoEditor({Key? key, required this.file}) : super(key: key);
+  VideoEditor({required this.file, required this.filterUrl});
 
   final File file;
+  String filterUrl;
 
   @override
   State<VideoEditor> createState() => _VideoEditorState();
@@ -32,7 +34,7 @@ class _VideoEditorState extends State<VideoEditor> {
   @override
   void initState() {
     _controller = VideoEditorController.file(widget.file,
-        maxDuration: const Duration(seconds: 30))
+        maxDuration: const Duration(seconds: 60))
       ..initialize().then((_) => setState(() {}));
     super.initState();
   }
@@ -45,12 +47,14 @@ class _VideoEditorState extends State<VideoEditor> {
     super.dispose();
   }
 
+  //crop screen
   void _openCropScreen() => Navigator.push(
       context,
       MaterialPageRoute<void>(
           builder: (BuildContext context) =>
               CropScreen(controller: _controller)));
 
+  //export video
   void _exportVideo() async {
     _exportingProgress.value = 0;
     _isExporting.value = true;
@@ -60,40 +64,65 @@ class _VideoEditorState extends State<VideoEditor> {
       // customInstruction: "-crf 17",
       onProgress: (stats, value) => _exportingProgress.value = value,
       onError: (e, s) => _exportText = "Error on export video :(",
-      onCompleted: (file) {
+      onCompleted: (file) async {
         _isExporting.value = false;
         if (!mounted) return;
 
-        final VideoPlayerController videoController =
-            VideoPlayerController.file(file);
-        videoController.initialize().then((value) async {
-          setState(() {});
-          videoController.play();
-          videoController.setLooping(true);
-          // await showDialog(
-          //   context: context,
-          //   builder: (_) => Padding(
-          //     padding: const EdgeInsets.all(30),
-          //     child: Center(
-          //       child: AspectRatio(
-          //         aspectRatio: videoController.value.aspectRatio,
-          //         child: VideoPlayer(videoController),
-          //       ),
-          //     ),
-          //   ),
-          // );
-          await videoController.pause();
-          videoController.dispose();
-        });
-
         _exportText = "Video success export!";
         setState(() => _exported = true);
+
         Future.delayed(const Duration(seconds: 2),
             () => setState(() => _exported = false));
+
+        File videoFile = File(file.path);
+
+        final directory = await ExternalPath.getExternalStoragePublicDirectory(
+            ExternalPath.DIRECTORY_DCIM);
+
+        String fileFormat = videoFile.path.split('.').last;
+
+        await videoFile
+            .copy(
+          '$directory/hellobyebye.$fileFormat',
+        )
+            .then((value) async {
+          await file.delete();
+        });
+
+        _downloadImage(widget.filterUrl);
       },
     );
   }
 
+  //download image to process with ffmpeg
+  void _downloadImage(String url) async {
+    try {
+      // Saved with this method.
+
+      var imageId = await ImageDownloader.downloadImage(url);
+      if (imageId == null) {
+        return;
+      }
+
+      // Below is a method of obtaining saved image information.
+      var fileName = await ImageDownloader.findName(imageId);
+      var path = await ImageDownloader.findPath(imageId);
+      var size = await ImageDownloader.findByteSize(imageId);
+      var mimeType = await ImageDownloader.findMimeType(imageId);
+
+      Get.to(() => const HomeScreen());
+
+      await controller.generateFile(path!, fileName!).then((value) {
+        // File(path).delete();
+      });
+
+      //dispose controller before moving to processing screen
+    } on PlatformException catch (error) {
+      print(error);
+    }
+  }
+
+  //export cover
   void _exportCover() async {
     setState(() => _exported = false);
     await _controller.extractCover(
@@ -119,6 +148,7 @@ class _VideoEditorState extends State<VideoEditor> {
     );
   }
 
+  //main layout
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -137,10 +167,44 @@ class _VideoEditorState extends State<VideoEditor> {
                             physics: const NeverScrollableScrollPhysics(),
                             children: [
                               Stack(alignment: Alignment.center, children: [
-                                CropGridViewer(
-                                  controller: _controller,
-                                  showGrid: false,
+                                Container(
+                                  child: LayoutBuilder(
+                                    builder: (BuildContext context,
+                                        BoxConstraints constraints) {
+                                      return Container(
+                                        width: constraints.maxWidth / .5,
+                                        height: constraints.maxHeight,
+                                        alignment: Alignment.topCenter,
+                                        child: CropGridViewer(
+                                          controller: _controller,
+                                          showGrid: false,
+                                        ),
+                                      );
+                                    },
+                                  ),
                                 ),
+
+                                //filter image
+                                IgnorePointer(
+                                  ignoring: true,
+                                  child: LayoutBuilder(
+                                    builder: (BuildContext context,
+                                        BoxConstraints constraints) {
+                                      return Container(
+                                        alignment: Alignment.topCenter,
+                                        child: CachedNetworkImage(
+                                          width: constraints.maxWidth / 1.4,
+                                          height: MediaQuery.of(context)
+                                              .size
+                                              .height,
+                                          fit: BoxFit.fitHeight,
+                                          imageUrl: widget.filterUrl,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                //play button
                                 AnimatedBuilder(
                                   animation: _controller.video,
                                   builder: (_, __) => OpacityTransition(
@@ -163,9 +227,34 @@ class _VideoEditorState extends State<VideoEditor> {
                                   ),
                                 ),
                               ]),
-                              CoverViewer(controller: _controller)
+                              //cover
+                              Stack(
+                                children: [
+                                  CoverViewer(controller: _controller),
+                                  IgnorePointer(
+                                    ignoring: true,
+                                    child: LayoutBuilder(
+                                      builder: (BuildContext context,
+                                          BoxConstraints constraints) {
+                                        return Container(
+                                          alignment: Alignment.center,
+                                          child: CachedNetworkImage(
+                                            width: constraints.maxWidth / 1.4,
+                                            height: MediaQuery.of(context)
+                                                .size
+                                                .height,
+                                            fit: BoxFit.fitHeight,
+                                            imageUrl: widget.filterUrl,
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              )
                             ],
                           )),
+                          //bottom tabs layout
                           Container(
                               height: 200,
                               margin: const EdgeInsets.only(top: 10),
@@ -183,7 +272,11 @@ class _VideoEditorState extends State<VideoEditor> {
                                                 Icons.content_cut,
                                                 color: Colors.black,
                                               )),
-                                          Text('Trim')
+                                          Text(
+                                            'Trim',
+                                            style:
+                                                TextStyle(color: Colors.black),
+                                          )
                                         ]),
                                     Row(
                                         mainAxisAlignment:
@@ -195,7 +288,11 @@ class _VideoEditorState extends State<VideoEditor> {
                                                 Icons.video_label,
                                                 color: Colors.black,
                                               )),
-                                          Text('Cover')
+                                          Text(
+                                            'Cover',
+                                            style:
+                                                TextStyle(color: Colors.black),
+                                          )
                                         ]),
                                   ],
                                 ),

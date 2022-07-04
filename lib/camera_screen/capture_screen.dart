@@ -1,14 +1,13 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:helpers/helpers.dart';
 import 'package:video_app/camera_screen/preview_screen.dart';
 import 'package:video_player/video_player.dart';
 
 class CapturesScreen extends StatefulWidget {
   final List<File> imageFileList;
 
-  const CapturesScreen({required this.imageFileList});
+  CapturesScreen({required this.imageFileList});
 
   @override
   State<CapturesScreen> createState() => _CapturesScreenState();

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:video_app/components/data_controller.dart';
 import 'package:video_app/components/databindings.dart';
 import 'package:video_app/home/home_screen.dart';
 import 'package:camera/camera.dart';

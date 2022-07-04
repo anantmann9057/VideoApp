@@ -1,17 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:geocoding/geocoding.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:external_path/external_path.dart';
+import 'package:ffmpeg_kit_flutter_min_gpl/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter_min_gpl/ffmpeg_kit_config.dart';
+import 'package:ffmpeg_kit_flutter_min_gpl/session.dart';
+
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
-import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:flutter/material.dart';
-import 'package:video_app/components/constant.dart';
 import 'package:video_app/models/comment_like_response_model.dart';
 import 'package:video_app/models/video_comments_model.dart';
 import 'package:video_app/models/video_list_model.dart';
@@ -27,6 +24,7 @@ class DataController extends GetxController with StateMixin<dynamic> {
   var latitude = 0.0.obs;
   var longitude = 0.0.obs;
   var pincode = ''.obs;
+
   bool isProductsLoading = true;
   bool isLoading = true;
 
@@ -36,12 +34,42 @@ class DataController extends GetxController with StateMixin<dynamic> {
   @override
   void onInit() {
     super.onInit();
-    determinePosition();
     getVideos();
   }
 
-  Future<SharedPreferences> prefs() async {
-    return await SharedPreferences.getInstance();
+  Future<void> generateWaveForm() async {
+    final directory = await ExternalPath.getExternalStoragePublicDirectory(
+        ExternalPath.DIRECTORY_DOWNLOADS);
+
+    FFmpegKitConfig.getSafParameterForWrite(directory)
+        .then((value) async {
+      await FFmpegKit.execute(
+              'ffmpeg -i $directory/test.mp3 $directory/output.wav')
+          .then((session) async {
+        var logs = await session.getLogs();
+        print(logs.last.getMessage()+logs.last.getLevel().toString()+logs.last.getSessionId().toString());
+      });
+    });
+  }
+
+  Future<void> generateFile(String filePath, String fileName) async {
+    final directory = await ExternalPath.getExternalStoragePublicDirectory(
+        ExternalPath.DIRECTORY_DCIM);
+
+    FFmpegKitConfig.getSafParameterForWrite(filePath).then((safUrl) async {
+      //
+      //         '-i $directory/hello.mp4 -i ${value!.path.toString()} -i $downloadsDirectory/thrilllogo.png -filter_complex "[2:v]scale=250x200,[0:v]overlay=0:0,[1:v]overlay=0:0" $safUrl.mp4')
+      await FFmpegKit.execute(
+              '-i $directory/hellobyebye.mp4 -i $filePath -filter_complex "[0:v]overlay=0:0" -vcodec libx265  -preset ultrafast -s 800x600 $directory/$fileName.mp4')
+          .then((value) async {
+        Get.snackbar("Successfull!!", 'Video Converted Successfully Yay!');
+        final directory = await ExternalPath.getExternalStoragePublicDirectory(
+            ExternalPath.DIRECTORY_DCIM);
+
+        File file = File('$directory/hellobyebye.mp4');
+        await file.delete();
+      });
+    });
   }
 
   Future<VideoListModel> getVideos() async {
@@ -119,67 +147,5 @@ class DataController extends GetxController with StateMixin<dynamic> {
       update();
       return CommentLikeResponseModel.fromJson(json.decode(response.body));
     }
-  }
-
-  void checkLogin() async {
-    var sharedPreferences = await prefs();
-    city.value = sharedPreferences.getString('city').toString();
-    address.value = sharedPreferences.getString("address").toString();
-  }
-
-  Future<Position> determinePosition() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    // Test if location services are enabled.
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      // Location services are not enabled don't continue
-      // accessing the position and request users of the
-      // App to enable the location services.
-      return Future.error('Location services are disabled.');
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        // Permissions are denied, next time you could try
-        // requesting permissions again (this is also where
-        // Android's shouldShowRequestPermissionRationale
-        // returned true. According to Android guidelines
-        // your App should show an explanatory UI now.
-        return Future.error('Location permissions are denied');
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      // Permissions are denied forever, handle appropriately.
-      return Future.error(
-          'Location permissions are permanently denied, we cannot request permissions.');
-    }
-
-    // When we reach here, permissions are granted and we can
-    // continue accessing the position of the device.
-    Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.bestForNavigation);
-    latitude.value = position.latitude;
-    longitude.value = position.longitude;
-    try {
-      List<Placemark> placemarks =
-          await placemarkFromCoordinates(position.latitude, position.longitude);
-      placemarks.forEach((element) {
-        pincode.value = element.postalCode.toString();
-
-        city.value = element.locality.toString();
-        address.value =
-            '${element.name.toString()}, ${element.locality.toString()}, ${element.postalCode.toString()}';
-      });
-    } catch (e) {
-      print(e);
-    }
-
-    return await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.best);
   }
 }

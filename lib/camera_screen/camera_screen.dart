@@ -1,23 +1,16 @@
 import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
-import 'dart:ui';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:camera/camera.dart';
-import 'package:external_path/external_path.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:horizontal_picker/horizontal_picker.dart';
-import 'package:image_downloader/image_downloader.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:video_app/camera_screen/process_video.dart';
 import 'package:video_app/components/constant.dart';
 import 'package:video_app/video_editor/video_editor.dart';
-import 'package:video_player/video_player.dart';
 
 import '../main.dart';
 
@@ -58,6 +51,7 @@ class _CameraScreenState extends State<CameraScreen>
 
   ResolutionPreset currentResolutionPreset = ResolutionPreset.high;
 
+  //get camera permission status and start camera
   getPermissionStatus() async {
     await Permission.camera.request();
     var status = await Permission.camera.status;
@@ -75,12 +69,17 @@ class _CameraScreenState extends State<CameraScreen>
     }
   }
 
+  //referesh gallery to check new videos or images
   refreshAlreadyCapturedImages() async {
+    //get directory
     final directory = await getApplicationDocumentsDirectory();
+    //get directory media list
     List<FileSystemEntity> fileList = await directory.list().toList();
     allFileList.clear();
+    //get file names
     List<Map<int, dynamic>> fileNames = [];
 
+    // loop through files lists containing video or audio
     fileList.forEach((file) {
       if (file.path.contains('.jpg') || file.path.contains('.mp4')) {
         allFileList.add(File(file.path));
@@ -91,9 +90,12 @@ class _CameraScreenState extends State<CameraScreen>
     });
 
     if (fileNames.isNotEmpty) {
+      //get recent file
       final recentFile =
           fileNames.reduce((curr, next) => curr[0] > next[0] ? curr : next);
       String recentFileName = recentFile[1];
+
+      //check if recent file is audio or video
       if (recentFileName.contains('.mp4')) {
         _videoFile = File('${directory.path}/$recentFileName');
         _imageFile = null;
@@ -107,6 +109,7 @@ class _CameraScreenState extends State<CameraScreen>
     }
   }
 
+  //start video recording
   Future<void> startVideoRecording() async {
     final CameraController? cameraController = _controller;
 
@@ -134,21 +137,8 @@ class _CameraScreenState extends State<CameraScreen>
 
     try {
       XFile? rawVideo = await _controller!.stopVideoRecording();
-      File videoFile = File(rawVideo!.path);
+      File videoFile = File(rawVideo.path);
 
-      int currentUnix = DateTime.now().millisecondsSinceEpoch;
-      final directory = await ExternalPath.getExternalStoragePublicDirectory(
-          ExternalPath.DIRECTORY_DCIM);
-
-      String fileFormat = videoFile.path.split('.').last;
-
-      _videoFile = await videoFile
-          .copy(
-        '$directory/hello.$fileFormat',
-      )
-          .then((value) async {
-        _downloadImage(_currentfilter.value);
-      });
       setState(() {
         _isRecordingInProgress = false;
       });
@@ -160,6 +150,7 @@ class _CameraScreenState extends State<CameraScreen>
     }
   }
 
+  //pause video recording and cancel timer
   Future<void> pauseVideoRecording() async {
     if (!_controller!.value.isRecordingVideo) {
       time?.cancel();
@@ -174,6 +165,7 @@ class _CameraScreenState extends State<CameraScreen>
     }
   }
 
+  //resume video recording
   Future<void> resumeVideoRecording() async {
     if (!_controller!.value.isRecordingVideo) {
       // No video recording was in progress
@@ -187,13 +179,14 @@ class _CameraScreenState extends State<CameraScreen>
     }
   }
 
+  //reset camera values to default
   void resetCameraValues() async {
     _currentZoomLevel = 1.0;
     _currentExposureOffset = 0.0;
   }
 
   void onNewCameraSelected(CameraDescription cameraDescription) async {
-    final previousCamera_controller = _controller;
+    final previousCameraController = _controller;
 
     final CameraController cameraController = CameraController(
       cameraDescription,
@@ -201,7 +194,7 @@ class _CameraScreenState extends State<CameraScreen>
       imageFormatGroup: ImageFormatGroup.jpeg,
     );
 
-    await previousCamera_controller?.dispose();
+    await previousCameraController?.dispose();
 
     resetCameraValues();
 
@@ -258,6 +251,7 @@ class _CameraScreenState extends State<CameraScreen>
     _controller!.setFocusPoint(offset);
   }
 
+  //check permission
   @override
   void initState() {
     // Hide the status bar in Android
@@ -265,7 +259,9 @@ class _CameraScreenState extends State<CameraScreen>
     super.initState();
   }
 
+  //start timer for video recording to be ended on timer end
   void startTimer() async {
+    //check if permission granted
     var status = await Permission.storage.status;
     if (status.isGranted) {
       time = Timer.periodic(Duration(seconds: 1), (t) async {
@@ -275,21 +271,25 @@ class _CameraScreenState extends State<CameraScreen>
 
         if (timer.value == 0 && _isRecordingInProgress) {
           t.cancel();
-          await stopVideoRecording();
 
-          if (timer.value == 0 || timer.value < 0) {
-            time?.cancel();
-          }
-          setState(() {});
+          var xFile = await stopVideoRecording();
+          var file = File(xFile!.path);
+
+          Get.off(() => VideoEditor(
+                file: file,
+                filterUrl: _currentfilter.value,
+              ))!.then((value) => _controller!.dispose());
         }
       });
     } else {
+      //ask for permission
       Map<Permission, PermissionStatus> statuses = await [
         Permission.storage,
       ].request();
     }
   }
 
+  // manage life cycle changes for camera controller
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final CameraController? cameraController = _controller;
@@ -299,6 +299,7 @@ class _CameraScreenState extends State<CameraScreen>
       return;
     }
 
+    // if app state is inactive dispose controller else create new instance
     if (state == AppLifecycleState.inactive) {
       cameraController.dispose();
     } else if (state == AppLifecycleState.resumed) {
@@ -306,6 +307,7 @@ class _CameraScreenState extends State<CameraScreen>
     }
   }
 
+  //dispose camera controller and timer
   @override
   void dispose() {
     _controller?.dispose();
@@ -326,18 +328,11 @@ class _CameraScreenState extends State<CameraScreen>
                         aspectRatio: 1 / _controller!.value.aspectRatio,
                         child: Stack(
                           children: [
+                            //camera preview layout
                             CameraPreview(
                               _controller!,
-                              child: LayoutBuilder(builder:
-                                  (BuildContext context,
-                                      BoxConstraints constraints) {
-                                return GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTapDown: (details) =>
-                                      onViewFinderTap(details, constraints),
-                                );
-                              }),
                             ),
+                            //filter overlay layout
                             IgnorePointer(
                               ignoring: true,
                               child: Container(
@@ -393,7 +388,7 @@ class _CameraScreenState extends State<CameraScreen>
                                                       .toString()
                                                       .split('.')[1]
                                                       .toUpperCase(),
-                                                  style: TextStyle(
+                                                  style: const TextStyle(
                                                       color: Colors.white),
                                                 ),
                                                 value: preset,
@@ -433,6 +428,7 @@ class _CameraScreenState extends State<CameraScreen>
                                       ),
                                     ),
                                   ),
+                                  // exposure offset layout
                                   Expanded(
                                     child: RotatedBox(
                                       quarterTurns: 3,
@@ -455,6 +451,7 @@ class _CameraScreenState extends State<CameraScreen>
                                       ),
                                     ),
                                   ),
+                                  //zoom layout
                                   Row(
                                     children: [
                                       Expanded(
@@ -496,6 +493,7 @@ class _CameraScreenState extends State<CameraScreen>
                                       ),
                                     ],
                                   ),
+                                  // timer picker layout
                                   Container(
                                     width: MediaQuery.of(context).size.width,
                                     child: HorizontalPicker(
@@ -543,7 +541,7 @@ class _CameraScreenState extends State<CameraScreen>
                                         child: Stack(
                                           alignment: Alignment.center,
                                           children: [
-                                            Icon(
+                                            const Icon(
                                               Icons.circle,
                                               color: Colors.black38,
                                               size: 60,
@@ -571,6 +569,7 @@ class _CameraScreenState extends State<CameraScreen>
                                           ],
                                         ),
                                       ),
+                                      //video recording button click listener
                                       InkWell(
                                         onTap: () async {
                                           if (_isRecordingInProgress) {
@@ -594,13 +593,13 @@ class _CameraScreenState extends State<CameraScreen>
                                                   : Colors.white38,
                                               size: 80,
                                             ),
-                                            Icon(
+                                            const Icon(
                                               Icons.circle,
                                               color: Colors.red,
                                               size: 65,
                                             ),
                                             _isRecordingInProgress
-                                                ? Icon(
+                                                ? const Icon(
                                                     Icons.stop_rounded,
                                                     color: Colors.white,
                                                     size: 32,
@@ -615,11 +614,15 @@ class _CameraScreenState extends State<CameraScreen>
                                           ],
                                         ),
                                       ),
+                                      //preview button
                                       InkWell(
                                         onTap: _videoFile != null
                                             ? () {
                                                 Get.to(VideoEditor(
-                                                    file: _videoFile!));
+                                                  file: _videoFile!,
+                                                  filterUrl:
+                                                      _currentfilter.value,
+                                                ));
                                               }
                                             : null,
                                         child: Container(
@@ -652,6 +655,7 @@ class _CameraScreenState extends State<CameraScreen>
                           ],
                         ),
                       ),
+                      //flash layout
                       Expanded(
                         child: SingleChildScrollView(
                           physics: const BouncingScrollPhysics(),
@@ -747,30 +751,32 @@ class _CameraScreenState extends State<CameraScreen>
                       ),
                     ],
                   )
-                : Center(
+                : //loading layout
+                const Center(
                     child: Text(
                       'LOADING',
                       style: TextStyle(color: Colors.white),
                     ),
                   )
-            : Column(
+            : //permission denied layout
+            Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Row(),
-                  Text(
+                  const Text(
                     'Permission denied',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 24,
                     ),
                   ),
-                  SizedBox(height: 24),
+                  const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: () {
                       getPermissionStatus();
                     },
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
+                    child: const Padding(
+                      padding: EdgeInsets.all(8.0),
                       child: Text(
                         'Give permission',
                         style: TextStyle(
@@ -786,6 +792,7 @@ class _CameraScreenState extends State<CameraScreen>
     );
   }
 
+  //filters layout
   List<Widget> filterListLayout() {
     List<Widget> filterlist = [];
     filterUrlList.forEach((element) {
@@ -810,25 +817,5 @@ class _CameraScreenState extends State<CameraScreen>
     return filterlist;
   }
 
-  void _downloadImage(String url) async {
-    try {
-      // Saved with this method.
-
-      var imageId = await ImageDownloader.downloadImage(url);
-      if (imageId == null) {
-        return;
-      }
-
-      // Below is a method of obtaining saved image information.
-      var fileName = await ImageDownloader.findName(imageId);
-      var path = await ImageDownloader.findPath(imageId);
-      var size = await ImageDownloader.findByteSize(imageId);
-      var mimeType = await ImageDownloader.findMimeType(imageId);
-
-      _controller!.dispose().then((value) =>
-          Get.off(() => ProcessVideo(fileName.toString(), path.toString())));
-    } on PlatformException catch (error) {
-      print(error);
-    }
-  }
+  
 }
