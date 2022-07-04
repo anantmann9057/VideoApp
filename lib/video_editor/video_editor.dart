@@ -312,26 +312,27 @@ class _VideoEditorState extends State<VideoEditor> {
                                 )
                               ])),
                           _customSnackBar(),
-                          ValueListenableBuilder(
-                            valueListenable: _isExporting,
-                            builder: (_, bool export, __) => OpacityTransition(
-                              visible: export,
-                              child: AlertDialog(
-                                backgroundColor: Colors.black,
-                                title: ValueListenableBuilder(
-                                  valueListenable: _exportingProgress,
-                                  builder: (_, double value, __) => Text(
-                                    "Exporting video ${(value * 100).ceil()}%",
-                                    style: const TextStyle(
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          )
+                          // ValueListenableBuilder(
+                          //   valueListenable: _isExporting,
+                          //   builder: (_, bool export, __) => OpacityTransition(
+                          //     visible: export,
+                          //     child: AlertDialog(
+                          //       backgroundColor: Colors.black,
+                          //       title: ValueListenableBuilder(
+                          //         valueListenable: _exportingProgress,
+                          //         builder: (_, double value, __) => Text(
+                          //           "Exporting video ${(value * 100).ceil()}%",
+                          //           style: const TextStyle(
+                          //             color: Colors.black,
+                          //             fontWeight: FontWeight.bold,
+                          //             fontSize: 14,
+                          //           ),
+                          //         ),
+                          //       ),
+                          //     ),
+                          //   ),
+                          // )
+                        
                         ])))
               ])
             ]))

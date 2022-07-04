@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:camera/camera.dart';
 import 'package:external_path/external_path.dart';
 import 'package:ffmpeg_kit_flutter_min_gpl/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_min_gpl/ffmpeg_kit_config.dart';
 import 'package:ffmpeg_kit_flutter_min_gpl/session.dart';
+import 'package:dio/dio.dart';
 
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
@@ -41,13 +43,14 @@ class DataController extends GetxController with StateMixin<dynamic> {
     final directory = await ExternalPath.getExternalStoragePublicDirectory(
         ExternalPath.DIRECTORY_DOWNLOADS);
 
-    FFmpegKitConfig.getSafParameterForWrite(directory)
-        .then((value) async {
+    FFmpegKitConfig.getSafParameterForWrite(directory).then((value) async {
       await FFmpegKit.execute(
-              'ffmpeg -i $directory/test.mp3 $directory/output.wav')
+              '-i $directory/test.mp3 -filter_complex "compand,showwavespic=s=640x120" -frames:v 1 $directory/output.png')
           .then((session) async {
         var logs = await session.getLogs();
-        print(logs.last.getMessage()+logs.last.getLevel().toString()+logs.last.getSessionId().toString());
+        print(logs.last.getMessage() +
+            logs.last.getLevel().toString() +
+            logs.last.getSessionId().toString());
       });
     });
   }
@@ -68,6 +71,26 @@ class DataController extends GetxController with StateMixin<dynamic> {
 
         File file = File('$directory/hellobyebye.mp4');
         await file.delete();
+      });
+    });
+  }
+
+  Future<void> uploadVideo(String filePath, String userId) async {
+    var request = new http.MultipartRequest("POST",
+        Uri.parse('https://9starinfosolutions.com/thrill/api/video/post'));
+    request.fields['name'] = 'Rohan';
+    request.fields['title'] = 'My first image';
+    request.files
+        .add(await http.MultipartFile.fromPath('profile_pic', filePath));
+    request.send().then((response) {
+      http.Response.fromStream(response).then((onValue) {
+        try {
+          // get your response here...
+          return response;
+        } catch (e) {
+          // handle exeption
+          return e.toString();
+        }
       });
     });
   }

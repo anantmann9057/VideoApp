@@ -42,8 +42,8 @@ class _HomeScreenState extends State<HomeScreen> {
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          //await controller.generateWaveForm();
-           Get.to(CameraScreen());
+          await controller.generateWaveForm();
+          //  Get.to(CameraScreen());
         },
         tooltip: 'Increment',
         child: Container(

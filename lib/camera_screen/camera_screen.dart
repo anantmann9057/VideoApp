@@ -276,9 +276,10 @@ class _CameraScreenState extends State<CameraScreen>
           var file = File(xFile!.path);
 
           Get.off(() => VideoEditor(
-                file: file,
-                filterUrl: _currentfilter.value,
-              ))!.then((value) => _controller!.dispose());
+                    file: file,
+                    filterUrl: _currentfilter.value,
+                  ))!
+              .then((value) => _controller!.dispose());
         }
       });
     } else {
@@ -335,11 +336,12 @@ class _CameraScreenState extends State<CameraScreen>
                             //filter overlay layout
                             IgnorePointer(
                               ignoring: true,
-                              child: Container(
-                                  width: MediaQuery.of(context).size.width,
-                                  height: MediaQuery.of(context).size.height,
+                              child: SizedBox.fromSize(
+                                  size: Size.fromWidth(
+                                      MediaQuery.of(context).size.width),
                                   child: CachedNetworkImage(
-                                    fit: BoxFit.cover,
+                                    width: MediaQuery.of(context).size.width,
+                                    fit: BoxFit.fitHeight,
                                     imageUrl: _currentfilter.value,
                                   )),
                             ),
@@ -816,6 +818,4 @@ class _CameraScreenState extends State<CameraScreen>
     });
     return filterlist;
   }
-
-  
 }
